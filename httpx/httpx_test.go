@@ -20,8 +20,7 @@ func (e foreignError) Error() string { return "foreign " + e.code }
 
 func init() {
 	MapError(func(err error) *apperr.Error {
-		var fe foreignError
-		if errors.As(err, &fe) {
+		if fe, ok := errors.AsType[foreignError](err); ok {
 			return apperr.Unprocessable(fe.code, fe.Error())
 		}
 		return nil

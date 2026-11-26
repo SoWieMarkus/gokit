@@ -86,8 +86,7 @@ func StatusOf(kind apperr.Kind) int {
 // package apperr map to 4xx by their Kind, unknown errors are logged and
 // hidden behind a generic 500 so internals never leak.
 func Error(w http.ResponseWriter, r *http.Request, err error) {
-	var reqErr *requestError
-	if errors.As(err, &reqErr) {
+	if reqErr, ok := errors.AsType[*requestError](err); ok {
 		WriteProblem(w, r, reqErr.status, reqErr.code, reqErr.detail, reqErr.fields)
 		return
 	}
@@ -99,8 +98,7 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 		}
 	}
 
-	var appErr *apperr.Error
-	if errors.As(err, &appErr) {
+	if appErr, ok := errors.AsType[*apperr.Error](err); ok {
 		WriteProblem(w, r, StatusOf(appErr.Kind), appErr.Code, appErr.Message, nil)
 		return
 	}
