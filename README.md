@@ -5,7 +5,7 @@ Shared platform code for the Go backends (bookmarks, wheelgpt, narfy-market, sch
 | Package | Purpose |
 |---|---|
 | `apperr` | Transport independent business errors (`Kind`, `Error`) |
-| `httpx` | JSON responses, `Decode` + validation, query/path params, RFC 9457 problems |
+| `httpx` | JSON responses, `Decode` + validation, query/path params, RFC 9457 problems, `MapError` for foreign error types |
 | `sqlite` | `Open` with production pragmas, goose `Migrate`, `InTx`, constraint error helpers |
 | `sqlite/sqlitetest` | Fresh migrated database per test |
 | `metrics` | Prometheus registry with Go/process/build/DB collectors and HTTP middleware |

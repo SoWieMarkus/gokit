@@ -14,7 +14,18 @@ import (
 	"github.com/SoWieMarkus/gokit/apperr"
 )
 
+type foreignError struct{ code string }
+
+func (e foreignError) Error() string { return "foreign " + e.code }
+
 func init() {
+	MapError(func(err error) *apperr.Error {
+		var fe foreignError
+		if errors.As(err, &fe) {
+			return apperr.Unprocessable(fe.code, fe.Error())
+		}
+		return nil
+	})
 	RegisterRule("even", func(fl validator.FieldLevel) bool {
 		return fl.Field().Int()%2 == 0
 	}, "must be even")
@@ -116,6 +127,7 @@ func TestErrorMapping(t *testing.T) {
 		apperr.New(apperr.KindUnavailable, "x", "x"):            http.StatusServiceUnavailable,
 		fmt.Errorf("wrapped: %w", apperr.Invalid("bad", "bad")): http.StatusBadRequest,
 		errors.New("database fire"):                             http.StatusInternalServerError,
+		fmt.Errorf("move: %w", foreignError{code: "gap"}):       http.StatusUnprocessableEntity,
 	}
 	for err, status := range cases {
 		w := httptest.NewRecorder()

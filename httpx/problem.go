@@ -46,6 +46,17 @@ func BadRequest(code, detail string) error {
 	return &requestError{status: http.StatusBadRequest, code: code, detail: detail}
 }
 
+// errorMappers translate foreign errors into apperr errors, see MapError.
+var errorMappers []func(error) *apperr.Error
+
+// MapError teaches Error to translate errors that are not *apperr.Error, for
+// example the error types of a library that must not depend on gokit. fn
+// returns nil for errors it does not know. Call it from an init function:
+// mappers must not be added while requests are served.
+func MapError(fn func(error) *apperr.Error) {
+	errorMappers = append(errorMappers, fn)
+}
+
 // StatusOf maps an error kind to its HTTP status. Unknown kinds are 500.
 func StatusOf(kind apperr.Kind) int {
 	switch kind {
@@ -79,6 +90,13 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.As(err, &reqErr) {
 		WriteProblem(w, r, reqErr.status, reqErr.code, reqErr.detail, reqErr.fields)
 		return
+	}
+
+	for _, mapErr := range errorMappers {
+		if appErr := mapErr(err); appErr != nil {
+			WriteProblem(w, r, StatusOf(appErr.Kind), appErr.Code, appErr.Message, nil)
+			return
+		}
 	}
 
 	var appErr *apperr.Error
